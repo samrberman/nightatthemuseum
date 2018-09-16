@@ -12,7 +12,7 @@ function showGalleries(url) {
     data.records.forEach(gallery => {
       document.querySelector("#galleries").innerHTML += `
         <li>
-          <a href="#${gallery.id}" onclick="showObjectsTable(${gallery.id})">
+          <a href="#${gallery.id}" onclick="showObjectsTable(${gallery.id}, 1)">
             Gallery #${gallery.id}: ${gallery.name} (Floor ${gallery.floor})
           </a>
         </li>
@@ -24,11 +24,12 @@ function showGalleries(url) {
   })
 }
 
-function showObjectsTable(gallery_id) {
-  request = `https://api.harvardartmuseums.org/object?gallery=${gallery_id}&apikey=${API_KEY}`
+function showObjectsTable(gallery_id, page) {
+  request = `https://api.harvardartmuseums.org/object?gallery=${gallery_id}&apikey=${API_KEY}&page=${page}`
   fetch(request)
   .then(response => response.json())
   .then(data => {
+      console.log(data)
       data.records.forEach(object => {
         document.querySelector("#objects").innerHTML += `
         <li>
@@ -39,8 +40,10 @@ function showObjectsTable(gallery_id) {
         </li>
         `;
       });
-      if (data.info.next) {
-        showObjectsTable(data.info.next);
+      //make sure you get all pages of data
+      //uses page numbers here instead of next url because function was already set up using gallery_id
+      if (data.info.page < data.info.pages) {
+        showObjectsTable(gallery_id, page + 1);
       }
     })
   document.querySelector("#all-objects").style.display = "block";
@@ -54,19 +57,15 @@ function showObject(object_number) {
   .then(response => response.json())
   .then(data => {
     data.records.forEach(object => {
-      console.log(object)
       //set image properties to null before we check if there is an image to use
       img_src = null
       img_height = null
       img_width = null
       //if there is an image, reset the image properties
       if (object.images.length > 0) {
-        console.log("there are images!")
         img_src = object.images[0].baseimageurl
         img_height = object.images[0].height
         img_width = object.images[0].width
-      } else {
-        console.log("no images :(")
       }
       //display this info for each object (should be just one)
       document.querySelector("#object").innerHTML += `
@@ -103,17 +102,13 @@ function fixNull(phrase) {
 //this function writes the line that will display the image correctly, then passes it back
 //should make it so that this function is passed the image information and parases it within the function itself
 function prepImageDisplay(img_src, img_height, img_width) {
-  //if image source url is NOT null, display an image
-  console.log(img_src)
-  console.log(!img_src)
+  //if image source url is NOT null, create instructions that control how image appears
   if (img_src) {
     formattedImg = `<img id="ObjectImage" src="${img_src}" width="${img_width}" height="${img_height}">`
-    console.log(formattedImg)
     return formattedImg
   }
   //otherwise (if null) do nothing
   else {
-    console.log("no info")
     return "No images available for this object."
   }
 }
