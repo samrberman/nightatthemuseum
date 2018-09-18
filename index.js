@@ -1,9 +1,36 @@
 const API_KEY = "7657d4b0-b77e-11e8-a4d1-69890776a30b";
 
+//used to resize images
+const min_side_length = 200
+const max_side_length = 800
+
 document.addEventListener("DOMContentLoaded", () => {
   const url = `https://api.harvardartmuseums.org/gallery?apikey=${API_KEY}`;
-  showGalleries(url);
+  navigateByUrl(url)
 });
+
+window.addEventListener('hashchange', () => {
+  const url = `https://api.harvardartmuseums.org/gallery?apikey=${API_KEY}`;
+  navigateByUrl(url)
+});
+
+//navigate to gallery or object based on number after # in url
+function navigateByUrl (current_url) {
+  result = window.location.hash
+  number = result.substring(1)
+  //if there is no number, display index
+  if (number == "") {
+    showGalleries(current_url)
+  }
+  //if the number includes "." then it's an object
+  else if (number.includes(".") || number.includes(["A"-"Z"])) {
+    showObject(number)
+  }
+  //otherwise it's a gallery
+  else {
+    showObjectsTable(number, 0)
+  }
+}
 
 function showGalleries(url) {
   fetch(url)
@@ -22,6 +49,9 @@ function showGalleries(url) {
       showGalleries(data.info.next);
     }
   })
+  document.querySelector("#all-galleries").style.display = "block";
+  document.querySelector("#all-objects").style.display = "none";
+  document.querySelector("#single-object").style.display = "none";
 }
 
 function showObjectsTable(gallery_id, page) {
@@ -29,14 +59,20 @@ function showObjectsTable(gallery_id, page) {
   fetch(request)
   .then(response => response.json())
   .then(data => {
-      console.log(data)
       data.records.forEach(object => {
         document.querySelector("#objects").innerHTML += `
         <li>
-          <a href="#${object.id}" onclick="showObject(${object.objectnumber})">
-            Object #${object.id}: ${object.title}
-            Number: ${object.objectnumber}
+          <a href="#${object.objectnumber}" onclick="showObject(${object.objectnumber})">
+            Object #${object.objectnumber}: ${object.title}
           </a>
+            <br>
+          <a href="${object.url}">More from the Harvard Art Museums</a>
+            <br>
+          People: ${getPeople(object)}
+            <br>
+          ${prepImageDisplay(object)}
+            <br>
+            <br>
         </li>
         `;
       });
@@ -57,18 +93,9 @@ function showObject(object_number) {
   .then(response => response.json())
   .then(data => {
     data.records.forEach(object => {
-      //set image properties to null before we check if there is an image to use
-      img_src = null
-      img_height = null
-      img_width = null
-      //if there is an image, reset the image properties
-      if (object.images.length > 0) {
-        img_src = object.images[0].baseimageurl
-        img_height = object.images[0].height
-        img_width = object.images[0].width
-      }
       //display this info for each object (should be just one)
       document.querySelector("#object").innerHTML += `
+        ${prepImageDisplay(object)}
         <li>
           Object #${object.id}: ${fixNull(object.title)}
         </li>
@@ -80,9 +107,6 @@ function showObject(object_number) {
         </li>
         <li>
           Accession Year: ${fixNull(object.accessionyear)}
-        </li>
-        <li>
-          ${prepImageDisplay(img_src, img_height, img_width)}
         </li>
       `;
       })
@@ -99,19 +123,59 @@ function fixNull(phrase) {
   } else return phrase
 }
 
-//this function writes the line that will display the image correctly, then passes it back
-//should make it so that this function is passed the image information and parases it within the function itself
-function prepImageDisplay(img_src, img_height, img_width) {
-  //if image source url is NOT null, create instructions that control how image appears
+function prepImageDisplay(object) {
+  console.log(object)
+  //set image properties to null before we check if there is an image to use
+  img_src = null
+  img_height = null
+  img_width = null
+  //if there is an image, reset the image properties with info provided
+  if (object.images[0]) {
+    img_src = object.images[0].baseimageurl
+    img_height = object.images[0].height
+    img_width = object.images[0].width
+  }
+  //if there is a url provided, make sure image is an appropriate size for display
+  //need to make sure this scales properly
   if (img_src) {
+    if (img_height <  min_side_length) {
+      img_height =  min_side_length
+    }
+    if (img_width <  min_side_length) {
+      img_width =  min_side_length
+    }
+    //and return the line that displays the image
     formattedImg = `<img id="ObjectImage" src="${img_src}" width="${img_width}" height="${img_height}">`
     return formattedImg
-  }
-  //otherwise (if null) do nothing
-  else {
-    return "No images available for this object."
+  } else {
+    //otherwise return a message that there are no images
+    return "No images availalble for this object.\n"
   }
 }
+
+//call initially with object, 0, ""
+function getPeople(object) {
+  //if there are people listed
+  let people_list = ""
+   if (object.people) {
+      object.people.forEach(person => {
+        people_list += person.name
+      })
+    } else {
+      people_list = "No people listed for this object."
+    }
+    return people_list
+}
+
+function getImageDimensions (img_src) {
+  console.log("getting image dimensions")
+  var img = new Image();
+    img.onload = function(){
+        var h = this.height; var w = this.width;
+    };
+    img.src = url; return [h, w]
+}
+
 
 
 
