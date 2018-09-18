@@ -2,7 +2,7 @@ const API_KEY = "7657d4b0-b77e-11e8-a4d1-69890776a30b";
 
 //used to resize images
 const min_side_length = 200
-const max_side_length = 800
+const max_side_length = 400
 
 document.addEventListener("DOMContentLoaded", () => {
   const url = `https://api.harvardartmuseums.org/gallery?apikey=${API_KEY}`;
@@ -36,6 +36,9 @@ function showGalleries(url) {
   fetch(url)
   .then(response => response.json())
   .then(data => {
+    if (data.info.page == 1) {
+      document.querySelector("#galleries").innerHTML += "<h2>Fogg Museum Galleries</h2>"
+    }
     data.records.forEach(gallery => {
       document.querySelector("#galleries").innerHTML += `
         <li>
@@ -59,6 +62,9 @@ function showObjectsTable(gallery_id, page) {
   fetch(request)
   .then(response => response.json())
   .then(data => {
+    if (data.info.page == 1) {
+      document.querySelector("#objects").innerHTML += `<h2>Gallery #${gallery_id}</h2>`
+    }
       data.records.forEach(object => {
         document.querySelector("#objects").innerHTML += `
         <li>
@@ -92,12 +98,15 @@ function showObject(object_number) {
   fetch(request)
   .then(response => response.json())
   .then(data => {
+    if (data.info.page == 1) {
+      document.querySelector("#object").innerHTML += `<h2>Object #${object_number}</h2>`
+    }
     data.records.forEach(object => {
       //display this info for each object (should be just one)
       document.querySelector("#object").innerHTML += `
         ${prepImageDisplay(object)}
         <li>
-          Object #${object.id}: ${fixNull(object.title)}
+          Title: ${fixNull(object.title)}
         </li>
         <li>
           Description: ${fixNull(object.description)}
@@ -138,14 +147,9 @@ function prepImageDisplay(object) {
   //if there is a url provided, make sure image is an appropriate size for display
   //need to make sure this scales properly
   if (img_src) {
-    if (img_height <  min_side_length) {
-      img_height =  min_side_length
-    }
-    if (img_width <  min_side_length) {
-      img_width =  min_side_length
-    }
     //and return the line that displays the image
-    formattedImg = `<img id="ObjectImage" src="${img_src}" width="${img_width}" height="${img_height}">`
+    //height is set so that objects are a good size for display; width adjusted accordingly
+    formattedImg = `<img id="ObjectImage" src="${img_src}" height="200">`
     return formattedImg
   } else {
     //otherwise return a message that there are no images
@@ -153,7 +157,6 @@ function prepImageDisplay(object) {
   }
 }
 
-//call initially with object, 0, ""
 function getPeople(object) {
   //if there are people listed
   let people_list = ""
@@ -167,14 +170,7 @@ function getPeople(object) {
     return people_list
 }
 
-function getImageDimensions (img_src) {
-  console.log("getting image dimensions")
-  var img = new Image();
-    img.onload = function(){
-        var h = this.height; var w = this.width;
-    };
-    img.src = url; return [h, w]
-}
+
 
 
 

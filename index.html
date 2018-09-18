@@ -4,9 +4,12 @@
         <title>Harvard Art Museums Galleries</title>
         <!-- <link href="styles.css" rel="stylesheet" /> -->
         <script src="index.js"></script>
+        <meta http-equiv="Cache-control" content="no-cache">
+        <META http-equiv="Pragma" content="no-cache">
     </head>
     <body>
         <h1 class="title">Harvard Art Museums</h1>
+        <button onclick="goBack()">Go Back</button>
         <div id="all-galleries">
             <h2>Galleries</h2>
             <ul id="galleries">
@@ -22,5 +25,10 @@
             <ul id="object">
             </ul>
         </div>
+        <script>
+          function goBack() {
+            window.history.back();
+          }
+        </script>
     </body>
 </html>
